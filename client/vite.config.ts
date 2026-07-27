@@ -1,39 +1,43 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import { VitePWA } from "vite-plugin-pwa";
+// import { VitePWA } from "vite-plugin-pwa";
 
+// PWA plugin temporarily disabled: its generateSW build step is failing on
+// Vercel's build machine (exits non-zero right after the core vite build
+// finishes, no PWA-specific error surfaced in the log). Re-enable once that's
+// root-caused -- don't want it blocking the actual app from deploying.
 export default defineConfig({
   plugins: [
     react(),
-    VitePWA({
-      registerType: "autoUpdate",
-      includeAssets: ["icons/apple-touch-icon.png"],
-      manifest: {
-        name: "Wastely — AI Waste Sorting Assistant",
-        short_name: "Wastely",
-        description: "Point your camera at anything and know instantly whether it's recyclable or trash.",
-        theme_color: "#0b3d2e",
-        background_color: "#f6f4ec",
-        display: "standalone",
-        start_url: "/app",
-        scope: "/",
-        icons: [
-          { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-          { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
-          { src: "/icons/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
-        ],
-      },
-      workbox: {
-        // Never cache API calls -- classification results must always be fresh.
-        navigateFallbackDenylist: [/^\/api\//],
-        runtimeCaching: [
-          {
-            urlPattern: /^\/api\//,
-            handler: "NetworkOnly",
-          },
-        ],
-      },
-    }),
+    // VitePWA({
+    //   registerType: "autoUpdate",
+    //   includeAssets: ["icons/apple-touch-icon.png"],
+    //   manifest: {
+    //     name: "Wastely — AI Waste Sorting Assistant",
+    //     short_name: "Wastely",
+    //     description: "Point your camera at anything and know instantly whether it's recyclable or trash.",
+    //     theme_color: "#0b3d2e",
+    //     background_color: "#f6f4ec",
+    //     display: "standalone",
+    //     start_url: "/app",
+    //     scope: "/",
+    //     icons: [
+    //       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+    //       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    //       { src: "/icons/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+    //     ],
+    //   },
+    //   workbox: {
+    //     // Never cache API calls -- classification results must always be fresh.
+    //     navigateFallbackDenylist: [/^\/api\//],
+    //     runtimeCaching: [
+    //       {
+    //         urlPattern: /^\/api\//,
+    //         handler: "NetworkOnly",
+    //       },
+    //     ],
+    //   },
+    // }),
   ],
   server: {
     port: Number(process.env.PORT) || 5183,
