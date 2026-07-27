@@ -1,7 +1,7 @@
 {
   "installCommand": "npm install",
   "buildCommand": "npm run build -w client",
-  "outputDirectory": "dist",
+  "outputDirectory": "client/dist",
   "rewrites": [
     { "source": "/api/:path*", "destination": "https://wastely-api.onrender.com/api/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
