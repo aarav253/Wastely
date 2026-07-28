@@ -29,11 +29,16 @@ const CLASSIFY_TOOL: Anthropic.Tool = {
         type: "string",
         description: "one short sentence explaining why, in plain language a user can act on",
       },
+      estimatedWeightGrams: {
+        type: "number",
+        description:
+          "rough typical weight of this item in grams, based on general knowledge of similar items (e.g. an empty aluminum can ~15g, a plastic water bottle ~20g, a pizza box ~150g, a glass jar ~180g). This is a directional estimate for tracking trends, not a precise measurement -- do not overthink it, just give a reasonable ballpark.",
+      },
     },
   },
 };
 
-const BASE_SYSTEM_PROMPT = `You are the vision classifier inside Wastely, an AI waste-sorting assistant. You are shown a single photo of one item. Identify the item and classify it as "recyclable" or "trash". When uncertain, prefer "trash" (over-claiming recyclability causes real contamination problems at recycling facilities). Always respond by calling the emit_classification tool exactly once.`;
+const BASE_SYSTEM_PROMPT = `You are the vision classifier inside Wastely, an AI waste-sorting assistant. You are shown a single photo of one item. Identify the item, classify it as "recyclable" or "trash", and give a rough estimated weight in grams. When uncertain about the category, prefer "trash" (over-claiming recyclability causes real contamination problems at recycling facilities). Always respond by calling the emit_classification tool exactly once.`;
 
 function buildSystemPrompt(state?: string): string {
   if (!state) {
@@ -88,5 +93,6 @@ export async function classifyImage(
     itemName: input.itemName || "Unknown item",
     confidence: Math.max(0, Math.min(1, Number(input.confidence) || 0)),
     reason: input.reason || "",
+    estimatedWeightGrams: Math.max(0, Number(input.estimatedWeightGrams) || 0),
   };
 }

@@ -14,6 +14,7 @@ export interface ClassificationResult {
   itemName: string;
   confidence: number;
   reason: string;
+  estimatedWeightGrams: number;
   progress: ScanProgress | null;
 }
 
@@ -25,6 +26,7 @@ export interface ScanRecord {
   itemName: string;
   confidence: number;
   reason: string;
+  estimatedWeightGrams: number;
   state: string | null;
   userCorrected: boolean;
   correctedCategory: DisposalCategory | null;

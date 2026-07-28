@@ -21,6 +21,7 @@ create table public.scans (
   confidence numeric not null,
   reason text,
   state text,
+  estimated_weight_grams numeric not null default 0,
   points_awarded int not null default 0,
   feedback_given boolean not null default false,
   user_corrected boolean not null default false,
@@ -80,7 +81,8 @@ create or replace function public.record_scan(
   p_confidence numeric,
   p_reason text,
   p_state text,
-  p_base_points int default 10
+  p_base_points int default 10,
+  p_estimated_weight_grams numeric default 0
 )
 returns table (
   scan_id uuid,
@@ -116,8 +118,8 @@ begin
   v_longest := greatest(v_longest, v_streak);
   v_streak_bonus := least(v_streak, 10) * 2;
 
-  insert into public.scans (user_id, item_name, category, confidence, reason, state, points_awarded)
-  values (p_user_id, p_item_name, p_category, p_confidence, p_reason, p_state, p_base_points + v_streak_bonus)
+  insert into public.scans (user_id, item_name, category, confidence, reason, state, estimated_weight_grams, points_awarded)
+  values (p_user_id, p_item_name, p_category, p_confidence, p_reason, p_state, coalesce(p_estimated_weight_grams, 0), p_base_points + v_streak_bonus)
   returning id into v_scan_id;
 
   update public.profiles pr
@@ -175,3 +177,20 @@ $$ language plpgsql security definer;
 -- to award points -- explicitly block direct client calls to these functions.
 revoke execute on function public.record_scan from public, anon, authenticated;
 revoke execute on function public.record_feedback from public, anon, authenticated;
+
+-- Public, read-only aggregate stats (no per-user data exposed) for the
+-- landing page's "impact so far" figure. Safe to expose to anyone.
+create or replace function public.get_global_impact_stats()
+returns table (
+  total_scans bigint,
+  total_weight_grams numeric,
+  recyclable_scans bigint
+) as $$
+  select
+    count(*),
+    coalesce(sum(estimated_weight_grams), 0),
+    count(*) filter (where category = 'recyclable')
+  from public.scans;
+$$ language sql security definer stable;
+
+grant execute on function public.get_global_impact_stats to anon, authenticated;

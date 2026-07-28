@@ -40,6 +40,7 @@ classifyRouter.post("/classify", async (req, res) => {
         confidence: result.confidence,
         reason: result.reason,
         state: validState,
+        estimatedWeightGrams: result.estimatedWeightGrams,
       });
       if (recorded) {
         progress = {

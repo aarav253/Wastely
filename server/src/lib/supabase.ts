@@ -28,7 +28,14 @@ export interface RecordScanResult {
 
 export async function recordScan(
   userId: string,
-  scan: { itemName: string; category: string; confidence: number; reason: string; state?: string }
+  scan: {
+    itemName: string;
+    category: string;
+    confidence: number;
+    reason: string;
+    state?: string;
+    estimatedWeightGrams?: number;
+  }
 ): Promise<RecordScanResult | null> {
   if (!supabaseAdmin) return null;
   const { data, error } = await supabaseAdmin
@@ -39,6 +46,7 @@ export async function recordScan(
       p_confidence: scan.confidence,
       p_reason: scan.reason,
       p_state: scan.state ?? null,
+      p_estimated_weight_grams: scan.estimatedWeightGrams ?? 0,
     })
     .single();
 

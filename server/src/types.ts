@@ -5,4 +5,5 @@ export interface ClassificationResult {
   itemName: string;
   confidence: number;
   reason: string;
+  estimatedWeightGrams: number;
 }

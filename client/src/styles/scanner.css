@@ -401,6 +401,21 @@
   max-width: 340px;
 }
 
+.result-weight {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0 0 10px;
+  color: var(--ink-faint);
+  font-size: 0.8rem;
+}
+
+.result-weight-note {
+  color: var(--ink-faint);
+  opacity: 0.75;
+  font-size: 0.72rem;
+}
+
 .feedback-row {
   display: flex;
   flex-direction: column;
@@ -746,6 +761,61 @@
 .profile-section-title {
   font-size: 0.95rem;
   margin-bottom: 12px;
+}
+
+.profile-section-note {
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--ink-faint);
+}
+
+.impact-card {
+  background: var(--surface-soft);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 22px;
+}
+
+.impact-headline {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--forest-700);
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+}
+
+.impact-headline svg {
+  align-self: center;
+}
+
+.impact-headline span {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.impact-bar-track {
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: #e7e9e6;
+  overflow: hidden;
+}
+
+.impact-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--gradient-brand);
+}
+
+.impact-bar-legend {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 0.72rem;
+  color: var(--ink-faint);
 }
 
 .badge-grid {

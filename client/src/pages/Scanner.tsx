@@ -66,6 +66,7 @@ export function Scanner() {
         itemName: classification.itemName,
         confidence: classification.confidence,
         reason: classification.reason,
+        estimatedWeightGrams: classification.estimatedWeightGrams,
         state: location || null,
         userCorrected: false,
         correctedCategory: null,
@@ -199,6 +200,7 @@ export function Scanner() {
                   itemName={result.itemName}
                   confidence={result.confidence}
                   reason={result.reason}
+                  estimatedWeightGrams={result.estimatedWeightGrams}
                   corrected={feedbackGiven}
                   progress={result.progress}
                   onConfirm={handleConfirm}

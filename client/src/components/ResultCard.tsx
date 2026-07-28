@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
-import { Recycle, Trash2, ThumbsUp, ThumbsDown, Sparkles, ScanLine, Flame, Zap } from "lucide-react";
+import { Recycle, Trash2, ThumbsUp, ThumbsDown, Sparkles, ScanLine, Flame, Zap, Scale } from "lucide-react";
 import type { DisposalCategory, ScanProgress } from "../types";
+import { formatEstimatedWeight } from "../lib/weight";
 
 interface ResultCardProps {
   imageDataUrl: string;
@@ -8,6 +9,7 @@ interface ResultCardProps {
   itemName: string;
   confidence: number;
   reason: string;
+  estimatedWeightGrams: number;
   corrected: boolean;
   progress: ScanProgress | null;
   onConfirm: () => void;
@@ -21,6 +23,7 @@ export function ResultCard({
   itemName,
   confidence,
   reason,
+  estimatedWeightGrams,
   corrected,
   progress,
   onConfirm,
@@ -81,6 +84,14 @@ export function ResultCard({
       </div>
 
       <p className="result-reason">{reason}</p>
+
+      {estimatedWeightGrams > 0 && (
+        <p className="result-weight">
+          <Scale size={12} />
+          Est. weight {formatEstimatedWeight(estimatedWeightGrams)}
+          <span className="result-weight-note">(AI estimate)</span>
+        </p>
+      )}
 
       {!corrected ? (
         <div className="feedback-row">
