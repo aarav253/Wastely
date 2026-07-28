@@ -250,6 +250,34 @@
   border-radius: var(--radius-pill);
 }
 
+.camera-flip-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(11, 61, 46, 0.55);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.camera-flip-btn:hover:not(:disabled) {
+  background: rgba(11, 61, 46, 0.8);
+  transform: scale(1.06);
+}
+
+.camera-flip-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .camera-error {
   color: var(--danger);
   font-size: 0.85rem;

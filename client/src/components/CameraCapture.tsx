@@ -1,16 +1,19 @@
 import { useEffect, useRef, useState } from "react";
-import { Camera, ImageUp, Video, VideoOff } from "lucide-react";
+import { Camera, ImageUp, Video, VideoOff, SwitchCamera } from "lucide-react";
 
 interface CameraCaptureProps {
   onCapture: (dataUrl: string) => void;
   disabled: boolean;
 }
 
+type FacingMode = "environment" | "user";
+
 export function CameraCapture({ onCapture, disabled }: CameraCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [cameraOn, setCameraOn] = useState(false);
+  const [facingMode, setFacingMode] = useState<FacingMode>("environment");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -19,7 +22,7 @@ export function CameraCapture({ onCapture, disabled }: CameraCaptureProps) {
     };
   }, []);
 
-  async function startCamera() {
+  async function startCamera(mode: FacingMode = facingMode) {
     setError(null);
     if (!navigator.mediaDevices?.getUserMedia) {
       setError("Camera access isn't available in this browser. Use \"Upload photo\" instead.");
@@ -27,9 +30,10 @@ export function CameraCapture({ onCapture, disabled }: CameraCaptureProps) {
     }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
+        video: { facingMode: mode },
         audio: false,
       });
+      streamRef.current?.getTracks().forEach((track) => track.stop());
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -45,6 +49,12 @@ export function CameraCapture({ onCapture, disabled }: CameraCaptureProps) {
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
     setCameraOn(false);
+  }
+
+  function flipCamera() {
+    const nextMode = facingMode === "environment" ? "user" : "environment";
+    setFacingMode(nextMode);
+    startCamera(nextMode);
   }
 
   function captureFrame() {
@@ -88,6 +98,16 @@ export function CameraCapture({ onCapture, disabled }: CameraCaptureProps) {
               <span className="corner-br" />
             </div>
             <span className="scan-hint">Center the item in frame</span>
+            <button
+              type="button"
+              className="camera-flip-btn"
+              onClick={flipCamera}
+              disabled={disabled}
+              aria-label="Flip camera"
+              title="Flip camera"
+            >
+              <SwitchCamera size={18} />
+            </button>
           </>
         )}
       </div>
@@ -96,7 +116,7 @@ export function CameraCapture({ onCapture, disabled }: CameraCaptureProps) {
 
       <div className="camera-controls">
         {!cameraOn ? (
-          <button type="button" className="btn btn-primary" onClick={startCamera} disabled={disabled}>
+          <button type="button" className="btn btn-primary" onClick={() => startCamera()} disabled={disabled}>
             <Video size={17} />
             Start camera
           </button>
