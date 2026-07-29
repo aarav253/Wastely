@@ -535,7 +535,14 @@
 .history-actions {
   display: flex;
   gap: 10px;
-  margin-bottom: 18px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.history-export-note {
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+  margin: 0 0 18px;
 }
 
 .history-list {

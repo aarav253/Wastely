@@ -13,6 +13,8 @@ import { resizeDataUrl } from "../lib/image";
 import { addScan, clearScans, getAllScans, updateScan } from "../lib/db";
 import { getStoredLocation, setStoredLocation } from "../lib/location";
 import { useAuth } from "../context/AuthContext";
+import { supabase } from "../lib/supabaseClient";
+import { buildImpactReport, downloadReport, type ReportSourceScan } from "../lib/report";
 import type { ClassificationResult, DisposalCategory, ScanRecord } from "../types";
 
 type Tab = "scan" | "history" | "leaderboard";
@@ -22,7 +24,8 @@ const TABS: Tab[] = ["scan", "history", "leaderboard"];
 const TAB_LABELS: Record<Tab, string> = { scan: "Scan", history: "History", leaderboard: "Rank" };
 
 export function Scanner() {
-  const { session, refreshProfile } = useAuth();
+  const { session, user, profile, refreshProfile } = useAuth();
+  const [exporting, setExporting] = useState(false);
   const [tab, setTab] = useState<Tab>("scan");
   const [status, setStatus] = useState<ScanStatus>("idle");
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -85,9 +88,13 @@ export function Scanner() {
 
   async function sendFeedback(corrected: boolean, correctedCategory: DisposalCategory | null) {
     const scanId = result?.progress?.scanId;
-    if (scanId && session?.access_token) {
+    if (!scanId || !session?.access_token) return;
+    try {
       await submitFeedback(scanId, corrected, correctedCategory, session.access_token);
       refreshProfile();
+    } catch {
+      // Points bonus is non-critical -- the confirm/correct UI already updated optimistically,
+      // so a network hiccup here just means the +5 points silently didn't land this time.
     }
   }
 
@@ -119,14 +126,49 @@ export function Scanner() {
     setScans([]);
   }
 
-  function handleExport() {
-    const blob = new Blob([JSON.stringify(scans, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `wastely-history-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  async function handleExport() {
+    setExporting(true);
+    try {
+      let records: ReportSourceScan[];
+      let dataSource: string;
+
+      if (user && supabase) {
+        const { data } = await supabase
+          .from("scans")
+          .select("created_at, item_name, category, corrected_category, estimated_weight_grams, confidence, state, user_corrected, feedback_given")
+          .eq("user_id", user.id);
+        records = (data ?? []).map((r) => ({
+          timestamp: new Date(r.created_at as string).getTime(),
+          itemName: r.item_name as string,
+          category: r.category as "recyclable" | "trash",
+          correctedCategory: r.corrected_category as string | null,
+          estimatedWeightGrams: Number(r.estimated_weight_grams) || 0,
+          confidence: Number(r.confidence) || 0,
+          state: r.state as string | null,
+          userCorrected: Boolean(r.user_corrected),
+          feedbackGiven: Boolean(r.feedback_given),
+        }));
+        dataSource = "Wastely account history (all devices)";
+      } else {
+        records = scans.map((s) => ({
+          timestamp: s.timestamp,
+          itemName: s.itemName,
+          category: s.predictedCategory,
+          correctedCategory: s.correctedCategory,
+          estimatedWeightGrams: s.estimatedWeightGrams,
+          confidence: s.confidence,
+          state: s.state,
+          userCorrected: s.userCorrected,
+        }));
+        dataSource = "local device history only (not signed in)";
+      }
+
+      const accountName = user ? profile?.display_name || user.email || "Wastely user" : "Anonymous (not signed in)";
+      const report = buildImpactReport(records, accountName, dataSource);
+      downloadReport(report, `wastely-impact-report-${new Date().toISOString().slice(0, 10)}.json`);
+    } finally {
+      setExporting(false);
+    }
   }
 
   const tabIndex = TABS.indexOf(tab);
@@ -221,7 +263,13 @@ export function Scanner() {
           )}
 
           {tab === "history" && (
-            <HistoryView scans={scans} onClear={handleClearHistory} onExport={handleExport} />
+            <HistoryView
+              scans={scans}
+              isSignedIn={Boolean(user)}
+              exporting={exporting}
+              onClear={handleClearHistory}
+              onExport={handleExport}
+            />
           )}
 
           {tab === "leaderboard" && <Leaderboard />}

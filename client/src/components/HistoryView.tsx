@@ -3,14 +3,17 @@ import type { ScanRecord } from "../types";
 
 interface HistoryViewProps {
   scans: ScanRecord[];
+  isSignedIn: boolean;
+  exporting: boolean;
   onClear: () => void;
   onExport: () => void;
 }
 
-export function HistoryView({ scans, onClear, onExport }: HistoryViewProps) {
+export function HistoryView({ scans, isSignedIn, exporting, onClear, onExport }: HistoryViewProps) {
   const total = scans.length;
   const corrected = scans.filter((s) => s.userCorrected).length;
   const recyclable = scans.filter((s) => (s.correctedCategory ?? s.predictedCategory) === "recyclable").length;
+  const canExport = total > 0 || isSignedIn;
 
   return (
     <div className="history-view">
@@ -37,46 +40,54 @@ export function HistoryView({ scans, onClear, onExport }: HistoryViewProps) {
         </div>
       </div>
 
-      {total === 0 ? (
-        <p className="history-empty">No scans yet — items you scan will show up here.</p>
-      ) : (
-        <>
-          <div className="history-actions">
-            <button type="button" className="btn btn-secondary" onClick={onExport}>
-              <Download size={16} />
-              Export data (JSON)
-            </button>
+      {canExport && (
+        <div className="history-actions">
+          <button type="button" className="btn btn-secondary" onClick={onExport} disabled={exporting}>
+            <Download size={16} />
+            {exporting ? "Exporting…" : "Export impact report (JSON)"}
+          </button>
+          {total > 0 && (
             <button type="button" className="btn btn-danger" onClick={onClear}>
-              Clear history
+              Clear local history
             </button>
-          </div>
+          )}
+        </div>
+      )}
 
-          <ul className="history-list">
-            {scans.map((scan) => {
-              const finalCategory = scan.correctedCategory ?? scan.predictedCategory;
-              const isRecyclable = finalCategory === "recyclable";
-              return (
-                <li key={scan.id} className="history-item">
-                  <img src={scan.thumbnailDataUrl} alt={scan.itemName} className="history-thumb" />
-                  <div className="history-item-body">
-                    <div className="history-item-top">
-                      <span className="history-item-name">{scan.itemName}</span>
-                      <span className={`category-pill ${isRecyclable ? "pill-recyclable" : "pill-trash"}`}>
-                        {isRecyclable ? <Recycle size={11} /> : <Trash2 size={11} />}
-                        {isRecyclable ? "Recyclable" : "Trash"}
-                      </span>
-                    </div>
-                    <span className="history-item-time">
-                      {new Date(scan.timestamp).toLocaleString()}
-                      {scan.state && ` · ${scan.state}`}
-                      {scan.userCorrected && " · corrected"}
+      {isSignedIn && (
+        <p className="history-export-note">
+          Export pulls your full account history (all devices). "Clear" only clears this device's local copy.
+        </p>
+      )}
+
+      {total === 0 ? (
+        <p className="history-empty">No scans on this device yet — items you scan will show up here.</p>
+      ) : (
+        <ul className="history-list">
+          {scans.map((scan) => {
+            const finalCategory = scan.correctedCategory ?? scan.predictedCategory;
+            const isRecyclable = finalCategory === "recyclable";
+            return (
+              <li key={scan.id} className="history-item">
+                <img src={scan.thumbnailDataUrl} alt={scan.itemName} className="history-thumb" />
+                <div className="history-item-body">
+                  <div className="history-item-top">
+                    <span className="history-item-name">{scan.itemName}</span>
+                    <span className={`category-pill ${isRecyclable ? "pill-recyclable" : "pill-trash"}`}>
+                      {isRecyclable ? <Recycle size={11} /> : <Trash2 size={11} />}
+                      {isRecyclable ? "Recyclable" : "Trash"}
                     </span>
                   </div>
-                </li>
-              );
-            })}
-          </ul>
-        </>
+                  <span className="history-item-time">
+                    {new Date(scan.timestamp).toLocaleString()}
+                    {scan.state && ` · ${scan.state}`}
+                    {scan.userCorrected && " · corrected"}
+                  </span>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       )}
     </div>
   );
