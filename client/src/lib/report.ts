@@ -104,6 +104,13 @@ export function buildImpactReport(records: ReportSourceScan[], accountName: stri
 
   const resolved = sorted.map((r) => ({
     ...r,
+    // Records written before materialCategory/estimatedWeightGrams existed (older local
+    // IndexedDB history) won't have these fields -- default them so they don't silently
+    // vanish from the JSON output (undefined values are dropped by JSON.stringify) and
+    // so they still land somewhere sane in the material breakdown instead of splitting
+    // into a bogus "undefined" bucket.
+    materialCategory: r.materialCategory ?? "other",
+    estimatedWeightGrams: r.estimatedWeightGrams ?? 0,
     finalCategory: ((r.correctedCategory as DisposalCategory | null | undefined) ?? r.category) as DisposalCategory,
   }));
 
