@@ -28,11 +28,22 @@ classifyRouter.post("/classify", async (req, res) => {
     return;
   }
 
+  let result;
   try {
-    const result = await classifyImage(base64Data, mediaType, validState);
+    result = await classifyImage(base64Data, mediaType, validState);
+  } catch (err) {
+    console.error("classification failed:", err);
+    res.status(502).json({ error: "classification failed" });
+    return;
+  }
 
+  // Points/streak recording is a secondary system -- a failure here (e.g. a
+  // transient Supabase hiccup) should never discard a classification the
+  // user already successfully got back from Claude, so this is isolated in
+  // its own try/catch rather than sharing one with the call above.
+  let progress = null;
+  try {
     const user = await getUserFromAuthHeader(req.headers.authorization);
-    let progress = null;
     if (user) {
       const recorded = await recordScan(user.id, {
         itemName: result.itemName,
@@ -41,6 +52,7 @@ classifyRouter.post("/classify", async (req, res) => {
         reason: result.reason,
         state: validState,
         estimatedWeightGrams: result.estimatedWeightGrams,
+        materialCategory: result.materialCategory,
       });
       if (recorded) {
         progress = {
@@ -53,10 +65,9 @@ classifyRouter.post("/classify", async (req, res) => {
         };
       }
     }
-
-    res.json({ ...result, progress });
   } catch (err) {
-    console.error("classification failed:", err);
-    res.status(502).json({ error: "classification failed" });
+    console.error("points recording failed (classification still succeeded):", err);
   }
+
+  res.json({ ...result, progress });
 });

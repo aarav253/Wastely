@@ -35,6 +35,7 @@ export async function recordScan(
     reason: string;
     state?: string;
     estimatedWeightGrams?: number;
+    materialCategory?: string;
   }
 ): Promise<RecordScanResult | null> {
   if (!supabaseAdmin) return null;
@@ -47,6 +48,7 @@ export async function recordScan(
       p_reason: scan.reason,
       p_state: scan.state ?? null,
       p_estimated_weight_grams: scan.estimatedWeightGrams ?? 0,
+      p_material_category: scan.materialCategory ?? "other",
     })
     .single();
 

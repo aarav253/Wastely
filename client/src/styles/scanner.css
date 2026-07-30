@@ -429,19 +429,29 @@
   max-width: 340px;
 }
 
+.result-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 4px;
+}
+
 .result-weight {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  margin: 0 0 10px;
+  margin: 0;
   color: var(--ink-faint);
   font-size: 0.8rem;
 }
 
 .result-weight-note {
+  display: block;
   color: var(--ink-faint);
   opacity: 0.75;
   font-size: 0.72rem;
+  margin: 2px 0 10px;
 }
 
 .feedback-row {

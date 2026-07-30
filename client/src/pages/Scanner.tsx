@@ -15,7 +15,7 @@ import { getStoredLocation, setStoredLocation } from "../lib/location";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabaseClient";
 import { buildImpactReport, downloadReport, type ReportSourceScan } from "../lib/report";
-import type { ClassificationResult, DisposalCategory, ScanRecord } from "../types";
+import type { ClassificationResult, DisposalCategory, MaterialCategory, ScanRecord } from "../types";
 
 type Tab = "scan" | "history" | "leaderboard";
 type ScanStatus = "idle" | "classifying" | "result" | "error";
@@ -70,6 +70,7 @@ export function Scanner() {
         confidence: classification.confidence,
         reason: classification.reason,
         estimatedWeightGrams: classification.estimatedWeightGrams,
+        materialCategory: classification.materialCategory,
         state: location || null,
         userCorrected: false,
         correctedCategory: null,
@@ -135,7 +136,9 @@ export function Scanner() {
       if (user && supabase) {
         const { data } = await supabase
           .from("scans")
-          .select("created_at, item_name, category, corrected_category, estimated_weight_grams, confidence, state, user_corrected, feedback_given")
+          .select(
+            "created_at, item_name, category, corrected_category, estimated_weight_grams, material_category, confidence, state, user_corrected, feedback_given"
+          )
           .eq("user_id", user.id);
         records = (data ?? []).map((r) => ({
           timestamp: new Date(r.created_at as string).getTime(),
@@ -143,6 +146,7 @@ export function Scanner() {
           category: r.category as "recyclable" | "trash",
           correctedCategory: r.corrected_category as string | null,
           estimatedWeightGrams: Number(r.estimated_weight_grams) || 0,
+          materialCategory: (r.material_category as MaterialCategory) || "other",
           confidence: Number(r.confidence) || 0,
           state: r.state as string | null,
           userCorrected: Boolean(r.user_corrected),
@@ -156,6 +160,7 @@ export function Scanner() {
           category: s.predictedCategory,
           correctedCategory: s.correctedCategory,
           estimatedWeightGrams: s.estimatedWeightGrams,
+          materialCategory: s.materialCategory,
           confidence: s.confidence,
           state: s.state,
           userCorrected: s.userCorrected,
@@ -243,6 +248,7 @@ export function Scanner() {
                   confidence={result.confidence}
                   reason={result.reason}
                   estimatedWeightGrams={result.estimatedWeightGrams}
+                  materialCategory={result.materialCategory}
                   corrected={feedbackGiven}
                   progress={result.progress}
                   onConfirm={handleConfirm}

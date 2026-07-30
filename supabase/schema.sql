@@ -22,6 +22,7 @@ create table public.scans (
   reason text,
   state text,
   estimated_weight_grams numeric not null default 0,
+  material_category text not null default 'other' check (material_category in ('paper_cardboard', 'plastic', 'metal', 'glass', 'organic', 'electronic', 'other')),
   points_awarded int not null default 0,
   feedback_given boolean not null default false,
   user_corrected boolean not null default false,
@@ -82,7 +83,8 @@ create or replace function public.record_scan(
   p_reason text,
   p_state text,
   p_base_points int default 10,
-  p_estimated_weight_grams numeric default 0
+  p_estimated_weight_grams numeric default 0,
+  p_material_category text default 'other'
 )
 returns table (
   scan_id uuid,
@@ -118,8 +120,8 @@ begin
   v_longest := greatest(v_longest, v_streak);
   v_streak_bonus := least(v_streak, 10) * 2;
 
-  insert into public.scans (user_id, item_name, category, confidence, reason, state, estimated_weight_grams, points_awarded)
-  values (p_user_id, p_item_name, p_category, p_confidence, p_reason, p_state, coalesce(p_estimated_weight_grams, 0), p_base_points + v_streak_bonus)
+  insert into public.scans (user_id, item_name, category, confidence, reason, state, estimated_weight_grams, material_category, points_awarded)
+  values (p_user_id, p_item_name, p_category, p_confidence, p_reason, p_state, coalesce(p_estimated_weight_grams, 0), coalesce(p_material_category, 'other'), p_base_points + v_streak_bonus)
   returning id into v_scan_id;
 
   update public.profiles pr

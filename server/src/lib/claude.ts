@@ -1,5 +1,15 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { ClassificationResult } from "../types.js";
+import type { ClassificationResult, MaterialCategory } from "../types.js";
+
+const MATERIAL_CATEGORIES = new Set<MaterialCategory>([
+  "paper_cardboard",
+  "plastic",
+  "metal",
+  "glass",
+  "organic",
+  "electronic",
+  "other",
+]);
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const MODEL = process.env.CLAUDE_MODEL || "claude-sonnet-5";
@@ -9,7 +19,6 @@ const CLASSIFY_TOOL: Anthropic.Tool = {
   description: "Emit the waste classification for the item shown in the image.",
   input_schema: {
     type: "object",
-    required: ["category", "itemName", "confidence", "reason"],
     properties: {
       category: {
         type: "string",
@@ -34,11 +43,18 @@ const CLASSIFY_TOOL: Anthropic.Tool = {
         description:
           "rough typical weight of this item in grams, based on general knowledge of similar items (e.g. an empty aluminum can ~15g, a plastic water bottle ~20g, a pizza box ~150g, a glass jar ~180g). This is a directional estimate for tracking trends, not a precise measurement -- do not overthink it, just give a reasonable ballpark.",
       },
+      materialCategory: {
+        type: "string",
+        enum: ["paper_cardboard", "plastic", "metal", "glass", "organic", "electronic", "other"],
+        description:
+          "the primary material the item is made of, using standard waste-composition categories (aligned with how GRI 306 and similar waste-reporting standards group waste): paper_cardboard, plastic, metal, glass, organic (food/yard waste), electronic (e-waste/batteries), or other (mixed-material, textiles, etc. -- anything that doesn't fit cleanly into the other categories).",
+      },
     },
+    required: ["category", "itemName", "confidence", "reason", "materialCategory"],
   },
 };
 
-const BASE_SYSTEM_PROMPT = `You are the vision classifier inside Wastely, an AI waste-sorting assistant. You are shown a single photo of one item. Identify the item, classify it as "recyclable" or "trash", and give a rough estimated weight in grams. When uncertain about the category, prefer "trash" (over-claiming recyclability causes real contamination problems at recycling facilities). Always respond by calling the emit_classification tool exactly once.`;
+const BASE_SYSTEM_PROMPT = `You are the vision classifier inside Wastely, an AI waste-sorting assistant. You are shown a single photo of one item. Identify the item, classify it as "recyclable" or "trash", give a rough estimated weight in grams, and identify its primary material category. When uncertain about the category, prefer "trash" (over-claiming recyclability causes real contamination problems at recycling facilities). Always respond by calling the emit_classification tool exactly once.`;
 
 function buildSystemPrompt(state?: string): string {
   if (!state) {
@@ -94,5 +110,6 @@ export async function classifyImage(
     confidence: Math.max(0, Math.min(1, Number(input.confidence) || 0)),
     reason: input.reason || "",
     estimatedWeightGrams: Math.max(0, Number(input.estimatedWeightGrams) || 0),
+    materialCategory: MATERIAL_CATEGORIES.has(input.materialCategory) ? input.materialCategory : "other",
   };
 }

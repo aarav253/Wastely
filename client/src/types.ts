@@ -1,5 +1,7 @@
 export type DisposalCategory = "recyclable" | "trash";
 
+export type MaterialCategory = "paper_cardboard" | "plastic" | "metal" | "glass" | "organic" | "electronic" | "other";
+
 export interface ScanProgress {
   scanId: string;
   points: number;
@@ -15,6 +17,7 @@ export interface ClassificationResult {
   confidence: number;
   reason: string;
   estimatedWeightGrams: number;
+  materialCategory: MaterialCategory;
   progress: ScanProgress | null;
 }
 
@@ -27,6 +30,7 @@ export interface ScanRecord {
   confidence: number;
   reason: string;
   estimatedWeightGrams: number;
+  materialCategory: MaterialCategory;
   state: string | null;
   userCorrected: boolean;
   correctedCategory: DisposalCategory | null;

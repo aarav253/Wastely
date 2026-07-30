@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
-import { Recycle, Trash2, ThumbsUp, ThumbsDown, Sparkles, ScanLine, Flame, Zap, Scale } from "lucide-react";
-import type { DisposalCategory, ScanProgress } from "../types";
+import { Recycle, Trash2, ThumbsUp, ThumbsDown, Sparkles, ScanLine, Flame, Zap, Scale, Layers } from "lucide-react";
+import type { DisposalCategory, MaterialCategory, ScanProgress } from "../types";
 import { formatEstimatedWeight } from "../lib/weight";
+import { MATERIAL_LABELS } from "../lib/material";
 
 interface ResultCardProps {
   imageDataUrl: string;
@@ -10,6 +11,7 @@ interface ResultCardProps {
   confidence: number;
   reason: string;
   estimatedWeightGrams: number;
+  materialCategory: MaterialCategory;
   corrected: boolean;
   progress: ScanProgress | null;
   onConfirm: () => void;
@@ -24,6 +26,7 @@ export function ResultCard({
   confidence,
   reason,
   estimatedWeightGrams,
+  materialCategory,
   corrected,
   progress,
   onConfirm,
@@ -85,13 +88,19 @@ export function ResultCard({
 
       <p className="result-reason">{reason}</p>
 
-      {estimatedWeightGrams > 0 && (
+      <div className="result-meta-row">
+        {estimatedWeightGrams > 0 && (
+          <p className="result-weight">
+            <Scale size={12} />
+            {formatEstimatedWeight(estimatedWeightGrams)}
+          </p>
+        )}
         <p className="result-weight">
-          <Scale size={12} />
-          Est. weight {formatEstimatedWeight(estimatedWeightGrams)}
-          <span className="result-weight-note">(AI estimate)</span>
+          <Layers size={12} />
+          {MATERIAL_LABELS[materialCategory]}
         </p>
-      )}
+      </div>
+      {estimatedWeightGrams > 0 && <span className="result-weight-note">(AI estimates)</span>}
 
       {!corrected ? (
         <div className="feedback-row">
