@@ -1,7 +1,9 @@
 import type { DisposalCategory, MaterialCategory } from "../types";
+import { MATERIAL_LABELS } from "./material";
 
 const GRAMS_PER_METRIC_TON = 1_000_000;
 const GRAMS_PER_KG = 1_000;
+const GRAMS_PER_POUND = 453.592;
 
 export interface ReportSourceScan {
   timestamp: number;
@@ -177,6 +179,86 @@ export function buildImpactReport(records: ReportSourceScan[], accountName: stri
 
 export function downloadReport(report: ImpactReport, filename: string): void {
   const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function csvCell(value: string | number | boolean): string {
+  const str = String(value);
+  return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+}
+
+function csvRow(cells: (string | number | boolean)[]): string {
+  return cells.map(csvCell).join(",");
+}
+
+function lbs(grams: number): number {
+  return Number((grams / GRAMS_PER_POUND).toFixed(2));
+}
+
+/** Human-readable spreadsheet version of the same report -- meant to be opened and read
+ * directly in Excel/Sheets, not parsed by machine (the JSON export is for that). */
+export function buildCsvReport(report: ImpactReport): string {
+  const lines: string[] = [];
+
+  lines.push(csvRow(["Wastely Impact Report"]));
+  lines.push(csvRow(["Generated", new Date(report.reportMetadata.generatedAt).toLocaleString()]));
+  lines.push(csvRow(["Account", report.reportMetadata.accountName]));
+  lines.push(csvRow(["Data source", report.reportMetadata.dataSource]));
+  lines.push(
+    csvRow([
+      "Period",
+      report.reportMetadata.periodStart ? new Date(report.reportMetadata.periodStart).toLocaleDateString() : "--",
+      "to",
+      report.reportMetadata.periodEnd ? new Date(report.reportMetadata.periodEnd).toLocaleDateString() : "--",
+    ])
+  );
+  lines.push("");
+
+  lines.push(csvRow(["Summary"]));
+  lines.push(csvRow(["Metric", "Value"]));
+  lines.push(csvRow(["Total scans", report.reportMetadata.totalRecords]));
+  lines.push(csvRow(["Recyclable (diverted) weight, lbs", lbs(report.disclosures["306-4_wasteDivertedFromDisposal"].totalWeightMetricTons * GRAMS_PER_METRIC_TON)]));
+  lines.push(csvRow(["Trash (disposed) weight, lbs", lbs(report.disclosures["306-5_wasteDirectedToDisposal"].totalWeightMetricTons * GRAMS_PER_METRIC_TON)]));
+  lines.push(csvRow(["Total weight, lbs", lbs(report.disclosures["306-3_wasteGenerated"].totalWeightMetricTons * GRAMS_PER_METRIC_TON)]));
+  lines.push(csvRow(["Estimated diversion rate", report.estimatedDiversionRatePercent !== null ? `${report.estimatedDiversionRatePercent}%` : "--"]));
+  lines.push("");
+
+  lines.push(csvRow(["Waste by material category"]));
+  lines.push(csvRow(["Material", "Weight, lbs", "Scan count"]));
+  for (const row of report.disclosures["306-3_wasteGenerated"].byMaterialCategory) {
+    lines.push(csvRow([MATERIAL_LABELS[row.materialCategory], lbs(row.weightMetricTons * GRAMS_PER_METRIC_TON), row.scanCount]));
+  }
+  lines.push("");
+
+  lines.push(csvRow(["Scan details"]));
+  lines.push(csvRow(["Date", "Item", "Category", "Material", "Est. weight, lbs", "Confidence", "State", "Reviewed by user"]));
+  for (const s of report.scans) {
+    lines.push(
+      csvRow([
+        new Date(s.date).toLocaleString(),
+        s.itemName,
+        s.category === "recyclable" ? "Recyclable" : "Trash",
+        MATERIAL_LABELS[s.materialCategory],
+        lbs(s.estimatedWeightKg * GRAMS_PER_KG),
+        `${Math.round(s.confidence * 100)}%`,
+        s.state ?? "",
+        s.userReviewed ? "Yes" : "No",
+      ])
+    );
+  }
+  lines.push("");
+  lines.push(csvRow(["Note: weights are AI-estimated from photos, not scale-verified. See the JSON export for full methodology and limitations."]));
+
+  return lines.join("\r\n");
+}
+
+export function downloadCsv(csv: string, filename: string): void {
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

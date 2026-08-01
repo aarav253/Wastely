@@ -14,7 +14,7 @@ import { addScan, clearScans, getAllScans, updateScan } from "../lib/db";
 import { getStoredLocation, setStoredLocation } from "../lib/location";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabaseClient";
-import { buildImpactReport, downloadReport, type ReportSourceScan } from "../lib/report";
+import { buildImpactReport, buildCsvReport, downloadReport, downloadCsv, type ReportSourceScan } from "../lib/report";
 import type { ClassificationResult, DisposalCategory, MaterialCategory, ScanRecord } from "../types";
 
 type Tab = "scan" | "history" | "leaderboard";
@@ -127,50 +127,65 @@ export function Scanner() {
     setScans([]);
   }
 
-  async function handleExport() {
+  async function buildCurrentReport() {
+    let records: ReportSourceScan[];
+    let dataSource: string;
+
+    if (user && supabase) {
+      const { data } = await supabase
+        .from("scans")
+        .select(
+          "created_at, item_name, category, corrected_category, estimated_weight_grams, material_category, confidence, state, user_corrected, feedback_given"
+        )
+        .eq("user_id", user.id);
+      records = (data ?? []).map((r) => ({
+        timestamp: new Date(r.created_at as string).getTime(),
+        itemName: r.item_name as string,
+        category: r.category as "recyclable" | "trash",
+        correctedCategory: r.corrected_category as string | null,
+        estimatedWeightGrams: Number(r.estimated_weight_grams) || 0,
+        materialCategory: (r.material_category as MaterialCategory) || "other",
+        confidence: Number(r.confidence) || 0,
+        state: r.state as string | null,
+        userCorrected: Boolean(r.user_corrected),
+        feedbackGiven: Boolean(r.feedback_given),
+      }));
+      dataSource = "Wastely account history (all devices)";
+    } else {
+      records = scans.map((s) => ({
+        timestamp: s.timestamp,
+        itemName: s.itemName,
+        category: s.predictedCategory,
+        correctedCategory: s.correctedCategory,
+        estimatedWeightGrams: s.estimatedWeightGrams,
+        materialCategory: s.materialCategory,
+        confidence: s.confidence,
+        state: s.state,
+        userCorrected: s.userCorrected,
+      }));
+      dataSource = "local device history only (not signed in)";
+    }
+
+    const accountName = user ? profile?.display_name || user.email || "Wastely user" : "Anonymous (not signed in)";
+    return buildImpactReport(records, accountName, dataSource);
+  }
+
+  async function handleExportJson() {
     setExporting(true);
     try {
-      let records: ReportSourceScan[];
-      let dataSource: string;
-
-      if (user && supabase) {
-        const { data } = await supabase
-          .from("scans")
-          .select(
-            "created_at, item_name, category, corrected_category, estimated_weight_grams, material_category, confidence, state, user_corrected, feedback_given"
-          )
-          .eq("user_id", user.id);
-        records = (data ?? []).map((r) => ({
-          timestamp: new Date(r.created_at as string).getTime(),
-          itemName: r.item_name as string,
-          category: r.category as "recyclable" | "trash",
-          correctedCategory: r.corrected_category as string | null,
-          estimatedWeightGrams: Number(r.estimated_weight_grams) || 0,
-          materialCategory: (r.material_category as MaterialCategory) || "other",
-          confidence: Number(r.confidence) || 0,
-          state: r.state as string | null,
-          userCorrected: Boolean(r.user_corrected),
-          feedbackGiven: Boolean(r.feedback_given),
-        }));
-        dataSource = "Wastely account history (all devices)";
-      } else {
-        records = scans.map((s) => ({
-          timestamp: s.timestamp,
-          itemName: s.itemName,
-          category: s.predictedCategory,
-          correctedCategory: s.correctedCategory,
-          estimatedWeightGrams: s.estimatedWeightGrams,
-          materialCategory: s.materialCategory,
-          confidence: s.confidence,
-          state: s.state,
-          userCorrected: s.userCorrected,
-        }));
-        dataSource = "local device history only (not signed in)";
-      }
-
-      const accountName = user ? profile?.display_name || user.email || "Wastely user" : "Anonymous (not signed in)";
-      const report = buildImpactReport(records, accountName, dataSource);
+      const report = await buildCurrentReport();
       downloadReport(report, `wastely-impact-report-${new Date().toISOString().slice(0, 10)}.json`);
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  async function handleExportCsv() {
+    setExporting(true);
+    try {
+      const report = await buildCurrentReport();
+      const csv = buildCsvReport(report);
+      downloadCsv(csv, `wastely-impact-report-${new Date().toISOString().slice(0, 10)}.csv`);
     } finally {
       setExporting(false);
     }
@@ -274,7 +289,8 @@ export function Scanner() {
               isSignedIn={Boolean(user)}
               exporting={exporting}
               onClear={handleClearHistory}
-              onExport={handleExport}
+              onExportJson={handleExportJson}
+              onExportCsv={handleExportCsv}
             />
           )}
 

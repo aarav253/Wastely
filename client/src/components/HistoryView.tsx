@@ -1,4 +1,4 @@
-import { Download, RotateCcw, ScanLine, Recycle, Trash2 } from "lucide-react";
+import { Download, FileSpreadsheet, RotateCcw, ScanLine, Recycle, Trash2 } from "lucide-react";
 import type { ScanRecord } from "../types";
 
 interface HistoryViewProps {
@@ -6,10 +6,11 @@ interface HistoryViewProps {
   isSignedIn: boolean;
   exporting: boolean;
   onClear: () => void;
-  onExport: () => void;
+  onExportJson: () => void;
+  onExportCsv: () => void;
 }
 
-export function HistoryView({ scans, isSignedIn, exporting, onClear, onExport }: HistoryViewProps) {
+export function HistoryView({ scans, isSignedIn, exporting, onClear, onExportJson, onExportCsv }: HistoryViewProps) {
   const total = scans.length;
   const corrected = scans.filter((s) => s.userCorrected).length;
   const recyclable = scans.filter((s) => (s.correctedCategory ?? s.predictedCategory) === "recyclable").length;
@@ -42,9 +43,13 @@ export function HistoryView({ scans, isSignedIn, exporting, onClear, onExport }:
 
       {canExport && (
         <div className="history-actions">
-          <button type="button" className="btn btn-secondary" onClick={onExport} disabled={exporting}>
+          <button type="button" className="btn btn-secondary" onClick={onExportCsv} disabled={exporting}>
+            <FileSpreadsheet size={16} />
+            {exporting ? "Exporting…" : "Export summary (CSV)"}
+          </button>
+          <button type="button" className="btn btn-secondary" onClick={onExportJson} disabled={exporting}>
             <Download size={16} />
-            {exporting ? "Exporting…" : "Export impact report (JSON)"}
+            {exporting ? "Exporting…" : "Export full report (JSON)"}
           </button>
           {total > 0 && (
             <button type="button" className="btn btn-danger" onClick={onClear}>
@@ -54,9 +59,11 @@ export function HistoryView({ scans, isSignedIn, exporting, onClear, onExport }:
         </div>
       )}
 
-      {isSignedIn && (
+      {canExport && (
         <p className="history-export-note">
-          Export pulls your full account history (all devices). "Clear" only clears this device's local copy.
+          CSV opens directly in Excel/Sheets — best for a quick look or sharing. JSON has the full structured
+          breakdown (GRI 306-aligned) for feeding into other tools.
+          {isSignedIn && " Export pulls your full account history (all devices); \"Clear\" only clears this device's local copy."}
         </p>
       )}
 
