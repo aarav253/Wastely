@@ -24,8 +24,8 @@ const features = [
   },
   {
     icon: ShieldCheck,
-    title: "Private by design",
-    desc: "Your scan history lives only in your browser's local storage — nothing is tracked or sent anywhere else.",
+    title: "Your data, your account",
+    desc: "Signing in with Google keeps your scans tied to you, not shared or sold — used only to power your own points, streaks, and history.",
   },
 ];
 

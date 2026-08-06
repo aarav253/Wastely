@@ -51,7 +51,7 @@ export function Hero() {
             </span>
             <span className="hero-trust-item">
               <ShieldCheck size={15} />
-              History stays on your device
+              Free with Google sign-in
             </span>
             <span className="hero-trust-item">
               <Recycle size={15} />

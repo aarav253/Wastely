@@ -6,6 +6,7 @@ import { ResultCard } from "../components/ResultCard";
 import { HistoryView } from "../components/HistoryView";
 import { LocationSelector } from "../components/LocationSelector";
 import { AuthButton } from "../components/AuthButton";
+import { AuthGate } from "../components/AuthGate";
 import { ProfilePanel } from "../components/ProfilePanel";
 import { Leaderboard } from "../components/Leaderboard";
 import { classifyImage, submitFeedback } from "../lib/api";
@@ -24,7 +25,8 @@ const TABS: Tab[] = ["scan", "history", "leaderboard"];
 const TAB_LABELS: Record<Tab, string> = { scan: "Scan", history: "History", leaderboard: "Rank" };
 
 export function Scanner() {
-  const { session, user, profile, refreshProfile } = useAuth();
+  const { session, user, profile, configured, loading: authLoading, refreshProfile } = useAuth();
+  const requiresSignIn = configured && !authLoading && !user;
   const [exporting, setExporting] = useState(false);
   const [tab, setTab] = useState<Tab>("scan");
   const [status, setStatus] = useState<ScanStatus>("idle");
@@ -202,9 +204,11 @@ export function Scanner() {
               <ArrowLeft size={16} />
               Back to site
             </Link>
-            <div style={{ marginLeft: "auto" }}>
-              <AuthButton onOpenProfile={() => setProfileOpen(true)} />
-            </div>
+            {!requiresSignIn && (
+              <div style={{ marginLeft: "auto" }}>
+                <AuthButton onOpenProfile={() => setProfileOpen(true)} />
+              </div>
+            )}
           </div>
 
           <span className="scanner-logo">
@@ -213,33 +217,41 @@ export function Scanner() {
           </span>
           <p className="scanner-tagline">AI-powered waste sorting assistant</p>
 
-          <div className="scanner-header-meta">
-            <LocationSelector value={location} onChange={handleLocationChange} />
-          </div>
+          {!requiresSignIn && !authLoading && (
+            <>
+              <div className="scanner-header-meta">
+                <LocationSelector value={location} onChange={handleLocationChange} />
+              </div>
 
-          <div className="segmented-tabs">
-            <div
-              className="segmented-indicator"
-              style={{
-                width: `calc(${100 / TABS.length}% - ${8 / TABS.length}px)`,
-                left: `calc(${(tabIndex * 100) / TABS.length}% + 4px)`,
-              }}
-            />
-            {TABS.map((t) => (
-              <button
-                key={t}
-                type="button"
-                className={`segmented-tab ${tab === t ? "segmented-tab-active" : ""}`}
-                onClick={() => setTab(t)}
-              >
-                {TAB_LABELS[t]}
-              </button>
-            ))}
-          </div>
+              <div className="segmented-tabs">
+                <div
+                  className="segmented-indicator"
+                  style={{
+                    width: `calc(${100 / TABS.length}% - ${8 / TABS.length}px)`,
+                    left: `calc(${(tabIndex * 100) / TABS.length}% + 4px)`,
+                  }}
+                />
+                {TABS.map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    className={`segmented-tab ${tab === t ? "segmented-tab-active" : ""}`}
+                    onClick={() => setTab(t)}
+                  >
+                    {TAB_LABELS[t]}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </header>
 
         <main className="scanner-main">
-          {tab === "scan" && (
+          {authLoading && <p className="auth-gate-loading">Loading…</p>}
+
+          {requiresSignIn && !authLoading && <AuthGate />}
+
+          {!requiresSignIn && !authLoading && tab === "scan" && (
             <>
               {status === "idle" && <CameraCapture onCapture={handleCapture} disabled={false} />}
 
@@ -283,7 +295,7 @@ export function Scanner() {
             </>
           )}
 
-          {tab === "history" && (
+          {!requiresSignIn && !authLoading && tab === "history" && (
             <HistoryView
               scans={scans}
               isSignedIn={Boolean(user)}
@@ -294,7 +306,7 @@ export function Scanner() {
             />
           )}
 
-          {tab === "leaderboard" && <Leaderboard />}
+          {!requiresSignIn && !authLoading && tab === "leaderboard" && <Leaderboard />}
         </main>
       </div>
 

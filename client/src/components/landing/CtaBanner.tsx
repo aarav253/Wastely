@@ -14,7 +14,7 @@ export function CtaBanner() {
           transition={{ duration: 0.5 }}
         >
           <h2>Ready to scan smarter?</h2>
-          <p>No account, no install — just open the app and point your camera.</p>
+          <p>Free, no install — just sign in with Google and point your camera.</p>
           <Link to="/app" className="btn btn-primary btn-lg">
             Launch Wastely
             <ArrowRight size={18} />

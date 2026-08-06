@@ -1,6 +1,6 @@
 # Wastely
 
-An AI-powered waste-sorting assistant. Point your camera (or upload a photo) at an item and Wastely tells you whether it's recyclable or trash, with a confidence score and a plain-language reason. Includes a marketing landing page, optional Google accounts with points/streaks/badges/leaderboard, and installable-app (PWA) support.
+An AI-powered waste-sorting assistant. Point your camera (or upload a photo) at an item and Wastely tells you whether it's recyclable or trash, with a confidence score and a plain-language reason. Includes a marketing landing page, Google sign-in (required to scan, once Supabase is configured) with points/streaks/badges/leaderboard, and installable-app (PWA) support.
 
 ## How it works
 
@@ -8,7 +8,7 @@ An AI-powered waste-sorting assistant. Point your camera (or upload a photo) at 
 - **Classify** — the image is sent to the server, which calls Claude's vision API to identify the item and classify it as `recyclable` or `trash`, via a structured tool-use call (`server/src/lib/claude.ts`). If you've set a state, that's factored into the guidance.
 - **Display** — the result (item name, category, confidence, reason) is shown immediately.
 - **Learn over time** — every scan, plus any correction you make, is stored locally in your browser (IndexedDB) regardless of login. The History tab lets you export it as JSON.
-- **Accounts (optional)** — sign in with Google to earn points per scan, build a day streak, unlock badges, and appear on the leaderboard. Nothing about scanning requires an account; it's purely an incentive layer on top.
+- **Accounts** — once Supabase is configured (see below), signing in with Google is required before you can scan at all. This unlocks points per scan, a day streak, badges, and the leaderboard. If Supabase isn't configured, there's no auth system to gate behind, so the app runs fully anonymous instead (see Quick start).
 
 ## Architecture
 
@@ -36,11 +36,11 @@ npm run dev
 
 This starts the Express API (`server/.env`'s `API_PORT`, default `4001`) and the Vite client (default `5183`, see `client/vite.config.ts`) — the client proxies `/api/*` to the server. Open the client URL printed in the terminal.
 
-Camera access requires either `localhost` or HTTPS. If camera permissions aren't available, use "Upload photo" instead. With no further setup, the app works exactly like this — no login, no database, fully local history — the account/points system below is entirely optional.
+Camera access requires either `localhost` or HTTPS. If camera permissions aren't available, use "Upload photo" instead. With no further setup, the app works exactly like this — no login, no database, fully local history — since there's no auth system configured yet to require sign-in against. `/api/health` reports `hasAccounts: false` in this state.
 
-## Adding accounts, points, and the leaderboard (optional)
+## Adding accounts, points, and the leaderboard
 
-This layer needs a free [Supabase](https://supabase.com) project. Nothing breaks if you skip this — the app just runs anonymous-only, exactly as in Quick start above (`/api/health` reports `hasAccounts: false` when unconfigured).
+This layer needs a free [Supabase](https://supabase.com) project. **Once the client's `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` are set (step 5 below), signing in with Google becomes mandatory before the scanner is usable at all** — `Scanner.tsx` shows a sign-in gate (`AuthGate.tsx`) instead of the camera UI until there's a signed-in user. Skip this section entirely to keep the app anonymous-only, exactly as in Quick start above.
 
 1. **Create a Supabase project** at supabase.com (free tier).
 2. **Run the schema**: Dashboard → SQL Editor → New query → paste the contents of [`supabase/schema.sql`](supabase/schema.sql) → Run. This creates the `profiles`/`scans` tables, row-level security policies, and the point/streak-awarding functions.
@@ -82,5 +82,5 @@ One more step if you added Google login: back in Google Cloud Console, add your 
 ## Notes
 
 - Classification defaults to the household single-stream recycling rules baked into the system prompt (`server/src/lib/claude.ts`) — clean paper/cardboard, metal cans, rigid plastics, glass. Food waste, greasy items, plastic film, and anything ambiguous default to trash, since false "recyclable" calls cause real contamination at sorting facilities.
-- Scanning itself never requires an account. Only points/streaks/badges/leaderboard need Supabase configured; everything else (camera, classification, local history/export) works identically with or without it.
+- Scanning requires a signed-in account whenever Supabase is configured on the client (see `AuthGate.tsx`/`Scanner.tsx`). With no Supabase config at all, there's no auth system to gate behind, so the app runs fully anonymous instead.
 - Points/streaks are awarded server-side via a Postgres function called with Supabase's service-role key, not directly by the client — a signed-in user can't call it themselves to award arbitrary points (see `revoke execute` at the bottom of `supabase/schema.sql`).

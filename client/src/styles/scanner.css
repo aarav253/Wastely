@@ -499,6 +499,65 @@
   padding-top: 20px;
 }
 
+.auth-gate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 32px 8px 12px;
+}
+
+.auth-gate-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--gradient-brand-soft);
+  color: var(--forest-700);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.auth-gate h2 {
+  font-size: 1.3rem;
+}
+
+.auth-gate p {
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+  max-width: 320px;
+  margin-bottom: 12px;
+}
+
+.auth-gate-btn {
+  width: 100%;
+  max-width: 280px;
+}
+
+.auth-gate-perks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.auth-gate-perks span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+}
+
+.auth-gate-loading {
+  text-align: center;
+  color: var(--ink-faint);
+  padding-top: 40px;
+}
+
 /* History */
 .history-stats {
   display: grid;

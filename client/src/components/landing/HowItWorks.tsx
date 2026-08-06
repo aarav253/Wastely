@@ -3,8 +3,8 @@ import { motion } from "framer-motion";
 const steps = [
   {
     n: "1",
-    title: "Capture",
-    desc: "Point your camera at an item, or upload a photo. No sign-up, no setup.",
+    title: "Sign in & capture",
+    desc: "Sign in with Google, then point your camera at an item or upload a photo.",
   },
   {
     n: "2",

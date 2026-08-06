@@ -5,7 +5,7 @@ import { gramsToPounds } from "../../lib/weight";
 
 const staticStats = [
   { num: "1 photo", desc: "is all it takes to get a clear recyclable-or-trash answer" },
-  { num: "100%", desc: "of your scan history stays local — never uploaded anywhere else" },
+  { num: "Free", desc: "to use — just sign in with Google, no credit card required" },
   { num: "2", desc: "clear categories, no confusing sub-bins to guess between" },
 ];
 
