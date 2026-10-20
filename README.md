@@ -86,5 +86,5 @@ Requires a free [Supabase](https://supabase.com) project:
 
 ## Notes
 
-- Installable-app (PWA) support is scaffolded (`vite-plugin-pwa`, icons in `client/public/icons/`) but currently disabled while a Vercel build issue is resolved.
+- **Installable as an app (PWA):** a hand-written web app manifest (`client/public/manifest.webmanifest`) and service worker (`client/public/sw.js`) make the site installable on phones and desktops. The service worker deliberately caches nothing and never touches `/api` calls, so classification results are always fresh. (`vite-plugin-pwa` is still a dev dependency but unused; its build step failed on Vercel.)
 - AI-estimated weights are directional, not scale-verified, so the GRI 306 export is supporting documentation rather than a certified ESG filing. Measured weights from the hardware load cell are the planned fix.
